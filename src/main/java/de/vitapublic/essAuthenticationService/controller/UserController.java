@@ -3,16 +3,14 @@ package de.vitapublic.essAuthenticationService.controller;
 
 import de.vitapublic.essAuthenticationService.controller.exception.LogicalException;
 import de.vitapublic.essAuthenticationService.model.User;
+import de.vitapublic.essAuthenticationService.service.ClientService;
 import de.vitapublic.essAuthenticationService.service.UserService;
 import de.vitapublic.essAuthenticationService.service.UserValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -29,8 +27,11 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @RequestMapping(value = "/registration", method = RequestMethod.GET , produces = "text/plain;charset=UTF-8")
-    public String registration(Model model, HttpServletRequest request, HttpServletResponse response) {
+    private ClientService clientService;
+
+    @RequestMapping(value = "/registration", method = RequestMethod.GET)
+    public String registration(Model model, HttpServletRequest request, HttpServletResponse response,
+    @RequestParam("clientKey") String clientKey, @RequestParam("clientSecret") String clientSecret) {
         User user = new User();
         model.addAttribute("user", user);
 
@@ -38,6 +39,12 @@ public class UserController {
         if (cookies != null) {
             Arrays.stream(cookies)
                     .forEach(c -> System.out.println(c.getName() + "=" + c.getValue()));
+        }
+
+        try {
+            String clientToken = clientService.authenticateClient(clientKey,clientSecret);
+        } catch (LogicalException e) {
+            e.printStackTrace();
         }
 
         Cookie newCookie = new Cookie("testCookie", "testCookieValue");
@@ -81,7 +88,7 @@ public class UserController {
         return "login";
     }
 
-    @RequestMapping(value = {"/welcome"}, method = RequestMethod.GET)
+    @RequestMapping(value = {"/welcome"}, method = RequestMethod.GET )
     public String welcome(Model model) {
         return "welcome";
     }
